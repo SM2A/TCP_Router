@@ -5,7 +5,7 @@
 #include <netinet/in.h> 
 #include <cstring>
 #include <vector>
-#include "Packet/Packet.h"
+#include "../Packet/Packet.h"
 using namespace std;
 
 class Receiver
@@ -74,6 +74,7 @@ struct Packet Receiver::createAck(int type, int ackNum)
     struct Packet ackPacket;
     ackPacket.type = type;
     ackPacket.seqnum = ackNum;
+    memset(ackPacket.data, 0, sizeof(ackPacket.data));
     return ackPacket;
 }
 
