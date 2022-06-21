@@ -9,7 +9,7 @@ SRC_FILES_C := $(wildcard $(SRC_DIR)/Client/*.cpp, wildcard $(SRC_DIR)/Client/*.
 
 all: clean router.out client.out
 
-server.out: $(SRC_FILES_S)
+router.out: $(SRC_FILES_S)
 	${CC} ${SRC_DIR}/Router/*.cpp -o router.out
 
 client.out: $(SRC_FILES_C)
