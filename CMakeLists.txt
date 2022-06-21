@@ -5,3 +5,8 @@ set(CMAKE_CXX_STANDARD 11)
 
 add_executable(Router Source/Router/main.cpp)
 add_executable(Client Source/Client/main.cpp)
+
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+target_link_libraries(Router PRIVATE Threads::Threads)
+#target_link_libraries(Client PRIVATE Threads::Threads)
