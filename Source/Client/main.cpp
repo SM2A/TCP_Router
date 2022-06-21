@@ -3,7 +3,7 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netinet/in.h>
-#include <afxres.h>
+#include <cstring>
 #include "../Packet/Packet.h"
 
 using namespace std;
