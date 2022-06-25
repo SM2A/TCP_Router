@@ -1,87 +1,95 @@
-#include <iostream>
-
-#include <cstdlib>
-#include <unistd.h>
+#include <cstring>
 #include <sys/socket.h>
 #include <netinet/in.h>
-#include <cstring>
-#include <arpa/inet.h>
+#include <iostream>
 #include <queue>
-
-#define ADDRESS "192.168.1.255"
-#define BUFFER 1024
 
 using namespace std;
 
-queue<string> data;
+#define PORT 8000
+#define RECIEVER_PORT 8080
+#define SENDER_PORT 3000
+#define PACKET_SIZE 1500
+#define BUFFER_SIZE 10
+#define WINDOW_SIZE 4
 
-int receivePort;
-int sendPort;
-
-void receivePacket(int port);
-void sendPacket(int port);
-
-void *rp(void *) {
-    receivePacket(receivePort);
-    return nullptr;
+void addSourcePort(char *message, const int port) {
+    char *ch = new char[10];
+    sprintf(ch, "_%d", port);
+    strncat(message, ch, sizeof(ch));
 }
 
-void *sp(void *) {
-    sendPacket(sendPort);
-    return nullptr;
+int getDestPort(char *message) {
+    int num = 0, j = 1;
+    for (int i = strlen(message) - 1; i >= 0; i--) {
+        if (message[i] == '_') {
+            message[i] = '\0';
+            return num;
+        }
+        num += (int) (message[i] - '0') * j;
+        j *= 10;
+    }
+    return -1;
 }
 
 int main() {
+    int sockfd, reciever_sock;
+    char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
+    char *to_send_message;
+    queue<char *> buffer;
+    struct sockaddr_in servaddr, cliaddr, reciever_addr;
 
-    pthread_t threads[2];
-    pthread_create(&threads[0], nullptr, &rp, nullptr);
-    pthread_create(&threads[1], nullptr, &sp, nullptr);
-    for (unsigned long thread : threads) pthread_join(thread, nullptr);
-
-    return 0;
-}
-
-void receivePacket(int port) {
-
-    int broadcast = 1, opt = 1;
-    struct sockaddr_in bc_address;
-
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
-    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
-
-    bc_address.sin_family = AF_INET;
-    bc_address.sin_port = htons(port);
-    bc_address.sin_addr.s_addr = inet_addr(ADDRESS);
-
-    bind(sock, (struct sockaddr *) &bc_address, sizeof(bc_address));
-
-    while (true) {
-        char temp[BUFFER] = {0};
-        recv(sock, temp, BUFFER, 0);
-        data.push(string(temp));
+    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
     }
-}
+    if ((reciever_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
+        perror("socket creation failed");
+        exit(EXIT_FAILURE);
+    }
 
-void sendPacket(int port) {
+    memset(&servaddr, 0, sizeof(servaddr));
+    memset(&cliaddr, 0, sizeof(cliaddr));
+    memset(&reciever_addr, 0, sizeof(reciever_addr));
 
-    int broadcast = 1, opt = 1;
-    struct sockaddr_in bc_address;
+    servaddr.sin_family = AF_INET;
+    servaddr.sin_addr.s_addr = INADDR_ANY;
+    servaddr.sin_port = htons(PORT);
 
-    int sock = socket(AF_INET, SOCK_DGRAM, 0);
-    setsockopt(sock, SOL_SOCKET, SO_BROADCAST, &broadcast, sizeof(broadcast));
-    setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, &opt, sizeof(opt));
+    reciever_addr.sin_family = AF_INET;
+    reciever_addr.sin_addr.s_addr = INADDR_ANY;
+    reciever_addr.sin_port = htons(RECIEVER_PORT);
 
-    bc_address.sin_family = AF_INET;
-    bc_address.sin_port = htons(port);
-    bc_address.sin_addr.s_addr = inet_addr(ADDRESS);
+    if (bind(sockfd, (const struct sockaddr *) &servaddr,
+             sizeof(servaddr)) < 0) {
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
 
-    bind(sock, (struct sockaddr *) &bc_address, sizeof(bc_address));
+    int n;
 
-    while (true) {
-        if (!data.empty()) {
-            sendto(sock, data.front().c_str(), strlen(data.front().c_str()), 0, (struct sockaddr *) &bc_address, sizeof(bc_address));
-            data.pop();
+    socklen_t len = sizeof(cliaddr);
+
+    while ((n = recvfrom(sockfd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL,
+                         (struct sockaddr *) &cliaddr, &len)) != -1) {
+        message[n] = '\0';
+        if (buffer.size() < BUFFER_SIZE) {
+            buffer.push(message);
+        }
+
+        if (!buffer.empty()) {
+            to_send_message = buffer.front();
+            buffer.pop();
+            int port = getDestPort(to_send_message);
+            reciever_addr.sin_port = port;
+            addSourcePort(to_send_message, cliaddr.sin_port);
+            if (rand() % 10 != 0) {
+                sendto(reciever_sock, (const char *) to_send_message, strlen(to_send_message),
+                       MSG_CONFIRM, (const struct sockaddr *) &reciever_addr,
+                       sizeof(reciever_addr));
+            }
         }
     }
+
+    return 0;
 }
