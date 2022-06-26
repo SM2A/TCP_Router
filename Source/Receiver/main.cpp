@@ -5,7 +5,7 @@
 
 using namespace std;
 
-#define SEND_PORT 1400
+#define RECEIVER_PORT 1401
 
 #define WINDOW_SIZE 4
 #define PACKET_SIZE 1500
@@ -75,7 +75,7 @@ int main() {
 
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(SEND_PORT);
+    servaddr.sin_port = htons(RECEIVER_PORT);
 
     if (bind(sock, (const struct sockaddr *) &servaddr,
              sizeof(servaddr)) < 0) {
