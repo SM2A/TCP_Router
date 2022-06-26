@@ -32,61 +32,46 @@ int getDestPort(char *message) {
 }
 
 int main() {
-    int sockfd, reciever_sock;
-    char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
-    char *to_send_message;
+
     queue<char *> buffer;
-    struct sockaddr_in servaddr, cliaddr, reciever_addr;
+    char *to_send_message;
+    char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
 
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
-    if ((reciever_sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
+    struct sockaddr_in serverAddr, clientAddr, receiverAddr;
 
-    memset(&servaddr, 0, sizeof(servaddr));
-    memset(&cliaddr, 0, sizeof(cliaddr));
-    memset(&reciever_addr, 0, sizeof(reciever_addr));
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    int receiverSock = socket(AF_INET, SOCK_DGRAM, 0);
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(SENDER_PORT);
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    memset(&clientAddr, 0, sizeof(clientAddr));
+    memset(&receiverAddr, 0, sizeof(receiverAddr));
 
-    reciever_addr.sin_family = AF_INET;
-    reciever_addr.sin_addr.s_addr = INADDR_ANY;
-    reciever_addr.sin_port = htons(RECEIVER_PORT);
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+    serverAddr.sin_port = htons(SENDER_PORT);
 
-    if (bind(sockfd, (const struct sockaddr *) &servaddr,
-             sizeof(servaddr)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
+    receiverAddr.sin_family = AF_INET;
+    receiverAddr.sin_addr.s_addr = INADDR_ANY;
+    receiverAddr.sin_port = htons(RECEIVER_PORT);
+
+    bind(fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
+
+    socklen_t len = sizeof(clientAddr);
 
     int n;
+    while ((n = recvfrom(fd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
 
-    socklen_t len = sizeof(cliaddr);
-
-    while ((n = recvfrom(sockfd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL,
-                         (struct sockaddr *) &cliaddr, &len)) != -1) {
         message[n] = '\0';
-        if (buffer.size() < BUFFER_SIZE) {
-            buffer.push(message);
-        }
+        if (buffer.size() < BUFFER_SIZE) buffer.push(message);
 
         if (!buffer.empty()) {
             to_send_message = buffer.front();
             buffer.pop();
             int port = getDestPort(to_send_message);
-            reciever_addr.sin_port = port;
-            addSourcePort(to_send_message, cliaddr.sin_port);
-            if (rand() % 10 != 0) {
-                sendto(reciever_sock, (const char *) to_send_message, strlen(to_send_message),
-                       MSG_CONFIRM, (const struct sockaddr *) &reciever_addr,
-                       sizeof(reciever_addr));
-            }
+            receiverAddr.sin_port = port;
+            addSourcePort(to_send_message, clientAddr.sin_port);
+            sendto(receiverSock, (const char *) to_send_message, strlen(to_send_message),MSG_CONFIRM,
+                   (const struct sockaddr *) &receiverAddr, sizeof(receiverAddr));
         }
     }
 

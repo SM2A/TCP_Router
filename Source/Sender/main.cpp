@@ -67,7 +67,7 @@ int main() {
 
     while (file >> noskipws >> character) {
         window[j][i++] = character;
-        if (i == 10) {
+        if (i == PACKET_SIZE) {
             packet_num = addPacketNum(window, j, packet_num);
             i = 0;
             j++;
