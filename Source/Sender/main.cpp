@@ -7,8 +7,8 @@
 
 using namespace std;
 
-#define SEND_PORT 1400
-#define RECEIVE_PORT 1401
+#define SEND_PORT 1398
+#define RECEIVER_PORT 1401
 
 #define WINDOW_SIZE 4
 #define PACKET_SIZE 1500
@@ -43,7 +43,7 @@ void sendWindowPackets(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd
 
 int addPacketNum(char window[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int j, int packet_num) {
     char *ch = new char[12];
-    sprintf(ch, "_%d_%d", packet_num, htons(RECEIVE_PORT));
+    sprintf(ch, "_%d_%d", packet_num, htons(RECEIVER_PORT));
     strncat(window[j], ch, sizeof(ch));
     return (packet_num + 1) % (WINDOW_SIZE * 2);
 }
@@ -85,7 +85,7 @@ int main() {
     }
     sendWindowPackets(window, fd, serverAddr);
     char *endChar = new char[12];
-    sprintf(endChar, "end_%d", htons(RECEIVE_PORT));
+    sprintf(endChar, "end_%d", htons(RECEIVER_PORT));
     serverAddr.sin_port = htons(SEND_PORT);
     sendto(fd, (const char *) endChar, strlen(endChar),
            MSG_CONFIRM, (const struct sockaddr *) &serverAddr,

@@ -5,8 +5,8 @@
 
 using namespace std;
 
-#define SEND_PORT 1400
-#define RECEIVE_PORT 1401
+#define SENDER_PORT 1398
+#define RECEIVER_PORT 1401
 
 #define WINDOW_SIZE 4
 #define BUFFER_SIZE 10
@@ -53,11 +53,11 @@ int main() {
 
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(SEND_PORT);
+    servaddr.sin_port = htons(SENDER_PORT);
 
     reciever_addr.sin_family = AF_INET;
     reciever_addr.sin_addr.s_addr = INADDR_ANY;
-    reciever_addr.sin_port = htons(RECEIVE_PORT);
+    reciever_addr.sin_port = htons(RECEIVER_PORT);
 
     if (bind(sockfd, (const struct sockaddr *) &servaddr,
              sizeof(servaddr)) < 0) {
