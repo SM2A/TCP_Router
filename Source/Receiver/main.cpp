@@ -5,6 +5,7 @@
 
 using namespace std;
 
+#define SENDER_PORT 1398
 #define RECEIVER_PORT 1401
 
 #define WINDOW_SIZE 4
@@ -51,7 +52,7 @@ void addDestPort(char *message, const int port) {
 void sendAck(int &expected_packet_num, const int sock, struct sockaddr_in &addr, const int dest_port) {
     char *ack_message = new char[20];
     sprintf(ack_message, "ACK-%d_%d", expected_packet_num, dest_port);
-    addr.sin_port = htons(8000);
+    addr.sin_port = htons(SENDER_PORT);
     sendto(sock, (const char *) ack_message, strlen(ack_message),
            MSG_CONFIRM, (const struct sockaddr *) &addr,
            sizeof(addr));

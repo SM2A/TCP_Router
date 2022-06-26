@@ -7,7 +7,7 @@
 
 using namespace std;
 
-#define SEND_PORT 1398
+#define SENDER_PORT 1398
 #define RECEIVER_PORT 1401
 
 #define WINDOW_SIZE 4
@@ -21,7 +21,7 @@ void sendWindowPackets(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd
     while (message[0] != 'A') {
 
         for (int k = 0; k < WINDOW_SIZE; k++) {
-            addr.sin_port = htons(SEND_PORT);
+            addr.sin_port = htons(SENDER_PORT);
             sendto(fd, (const char *) window[k], strlen(window[k]), MSG_CONFIRM, (const struct sockaddr *) &addr, sizeof(addr));
         }
 
@@ -59,7 +59,7 @@ int main() {
     memset(&serverAddr, 0, sizeof(serverAddr));
 
     serverAddr.sin_family = AF_INET;
-    serverAddr.sin_port = htons(SEND_PORT);
+    serverAddr.sin_port = htons(SENDER_PORT);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
 
     fstream file("../Data/Data.txt");
@@ -86,14 +86,14 @@ int main() {
     sendWindowPackets(window, fd, serverAddr);
     char *endChar = new char[12];
     sprintf(endChar, "end_%d", htons(RECEIVER_PORT));
-    serverAddr.sin_port = htons(SEND_PORT);
+    serverAddr.sin_port = htons(SENDER_PORT);
     sendto(fd, (const char *) endChar, strlen(endChar),
            MSG_CONFIRM, (const struct sockaddr *) &serverAddr,
            sizeof(serverAddr));
     close(fd);
 
     auto end = chrono::high_resolution_clock::now();
-    cout << chrono::duration<double, nano>(end - begin).count() << " ns" << endl;
+    cout << chrono::duration<double, milli>(end - begin).count() << " ms" << endl;
 
     return 0;
 }
