@@ -17,7 +17,7 @@ int getSize(char *s) {
     return t - s;
 }
 
-int getPacketNum(char packet[PACKET_SIZE + WINDOW_SIZE * 2 + 12]) {
+int getPacketNum(char *packet) {
     int num = 0, j = 1;
     for (int i = getSize(packet) - 1; i >= 0; i--) {
         if (packet[i] == '_') {
@@ -30,7 +30,7 @@ int getPacketNum(char packet[PACKET_SIZE + WINDOW_SIZE * 2 + 12]) {
     return -1;
 }
 
-int getDestPort(char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12]) {
+int getDestPort(char *message) {
     int num = 0, j = 1;
     for (int i = strlen(message) - 1; i >= 0; i--) {
         if (message[i] == '_') {
@@ -43,59 +43,43 @@ int getDestPort(char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12]) {
     return -1;
 }
 
-void addDestPort(char *message, const int port) {
-    char *ch = new char[12];
-    sprintf(ch, "_%d", port);
-    strncat(message, ch, sizeof(ch));
-}
-
 void sendAck(int &expected_packet_num, const int sock, struct sockaddr_in &addr, const int dest_port) {
     char *ack_message = new char[20];
     sprintf(ack_message, "ACK-%d_%d", expected_packet_num, dest_port);
     addr.sin_port = htons(SENDER_PORT);
-    sendto(sock, (const char *) ack_message, strlen(ack_message),
-           MSG_CONFIRM, (const struct sockaddr *) &addr,
-           sizeof(addr));
+    sendto(sock, (const char *) ack_message, strlen(ack_message),MSG_CONFIRM, (const struct sockaddr *) &addr,sizeof(addr));
 }
 
 int main() {
-    int sock, packet_num, expected_packet_num = 0, port;
+
+    bool receivedAll, receivedPackets[WINDOW_SIZE];
+    int port, packet_num, expected_packet_num = 0;
     char message[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + 12];
-    bool recieved_packets[WINDOW_SIZE];
-    bool recieved_all;
 
-    struct sockaddr_in servaddr, cliaddr;
+    struct sockaddr_in servAddr, clientAddr;
 
-    if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
-        perror("socket creation failed");
-        exit(EXIT_FAILURE);
-    }
+    memset(&servAddr, 0, sizeof(servAddr));
+    memset(&clientAddr, 0, sizeof(clientAddr));
 
-    memset(&servaddr, 0, sizeof(servaddr));
-    memset(&cliaddr, 0, sizeof(cliaddr));
+    servAddr.sin_family = AF_INET;
+    servAddr.sin_addr.s_addr = INADDR_ANY;
+    servAddr.sin_port = htons(RECEIVER_PORT);
 
-    servaddr.sin_family = AF_INET;
-    servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(RECEIVER_PORT);
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
 
-    if (bind(sock, (const struct sockaddr *) &servaddr,
-             sizeof(servaddr)) < 0) {
-        perror("bind failed");
-        exit(EXIT_FAILURE);
-    }
+    bind(fd, (const struct sockaddr *) &servAddr, sizeof(servAddr));
 
-    int n;
+    socklen_t len = sizeof(clientAddr);
 
-    socklen_t len = sizeof(cliaddr);
+    ofstream file("out.txt");
 
-    ofstream MyFile("out.txt");
-    memset(recieved_packets, false, WINDOW_SIZE);
+    memset(receivedPackets, false, WINDOW_SIZE);
 
     while (true) {
 
         char packet[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
-        n = recvfrom(sock, (char *) packet, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL,
-                     (struct sockaddr *) &cliaddr, &len);
+        int n = recvfrom(fd, (char *) packet, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL,
+                     (struct sockaddr *) &clientAddr, &len);
         packet[n] = '\0';
         port = getDestPort(packet);
         if (!strcmp(packet, "end")) {
@@ -104,26 +88,23 @@ int main() {
         packet_num = getPacketNum(packet);
         if (expected_packet_num <= packet_num && expected_packet_num + WINDOW_SIZE > packet_num) {
             strncpy(message[packet_num % WINDOW_SIZE], packet, PACKET_SIZE + WINDOW_SIZE * 2 + 12);
-            recieved_packets[packet_num % WINDOW_SIZE] = true;
+            receivedPackets[packet_num % WINDOW_SIZE] = true;
         } else {
-            sendAck(expected_packet_num, sock, cliaddr, port);
+            sendAck(expected_packet_num, fd, clientAddr, port);
         }
 
-        recieved_all = true;
-        for (int i = 0; i < WINDOW_SIZE; i++) {
-            if (!recieved_packets[i]) {
-                recieved_all = false;
-            }
-        }
-        if (recieved_all) {
-            memset(recieved_packets, false, WINDOW_SIZE);
-            for (int i = 0; i < WINDOW_SIZE; i++) {
-                MyFile << message[i];
-            }
+        receivedAll = true;
+        for (bool receivedPacket : receivedPackets) if (!receivedPacket) receivedAll = false;
+
+        if (receivedAll) {
+            memset(receivedPackets, false, WINDOW_SIZE);
+            for (auto & i : message) file << i;
             expected_packet_num = (expected_packet_num + WINDOW_SIZE) % (2 * WINDOW_SIZE);
-            sendAck(expected_packet_num, sock, cliaddr, port);
+            sendAck(expected_packet_num, fd, clientAddr, port);
         }
     }
-    MyFile.close();
+
+    file.close();
+
     return 0;
 }

@@ -28,7 +28,7 @@ void sendWindowPackets(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd
         socklen_t len;
         struct timeval tv{0, 1000};
         setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-        int n = recvfrom(fd, (char *) message, PACKET_SIZE,MSG_WAITALL, (struct sockaddr *) &addr, &len);
+        int n = recvfrom(fd, (char *) message, PACKET_SIZE, MSG_WAITALL, (struct sockaddr *) &addr, &len);
 
         if (n < 0) {
             message[0] = '\0';
@@ -77,23 +77,25 @@ int main() {
             j = 0;
         }
     }
+
     packet_num = addPacketNum(window, j, packet_num);
+
     while (j < WINDOW_SIZE) {
-        i = 0;
         j++;
         packet_num = addPacketNum(window, j, packet_num);
     }
-    sendWindowPackets(window, fd, serverAddr);
+
     char *endChar = new char[12];
+    sendWindowPackets(window, fd, serverAddr);
     sprintf(endChar, "end_%d", htons(RECEIVER_PORT));
     serverAddr.sin_port = htons(SENDER_PORT);
-    sendto(fd, (const char *) endChar, strlen(endChar),
-           MSG_CONFIRM, (const struct sockaddr *) &serverAddr,
-           sizeof(serverAddr));
-    close(fd);
+
+    sendto(fd, (const char *) endChar, strlen(endChar), MSG_CONFIRM, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
     auto end = chrono::high_resolution_clock::now();
     cout << chrono::duration<double, milli>(end - begin).count() << " ms" << endl;
+
+    close(fd);
 
     return 0;
 }
