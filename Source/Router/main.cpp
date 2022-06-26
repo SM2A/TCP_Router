@@ -1,17 +1,16 @@
-#include <cstring>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <iostream>
 #include <queue>
+#include <cstring>
+#include <iostream>
+#include <netinet/in.h>
 
 using namespace std;
 
-#define PORT 8000
-#define RECIEVER_PORT 8080
-#define SENDER_PORT 3000
-#define PACKET_SIZE 1500
-#define BUFFER_SIZE 10
+#define SEND_PORT 1400
+#define RECEIVE_PORT 1401
+
 #define WINDOW_SIZE 4
+#define BUFFER_SIZE 10
+#define PACKET_SIZE 1500
 
 void addSourcePort(char *message, const int port) {
     char *ch = new char[10];
@@ -54,11 +53,11 @@ int main() {
 
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(SEND_PORT);
 
     reciever_addr.sin_family = AF_INET;
     reciever_addr.sin_addr.s_addr = INADDR_ANY;
-    reciever_addr.sin_port = htons(RECIEVER_PORT);
+    reciever_addr.sin_port = htons(RECEIVE_PORT);
 
     if (bind(sockfd, (const struct sockaddr *) &servaddr,
              sizeof(servaddr)) < 0) {

@@ -1,20 +1,14 @@
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <iostream>
+#include <cstring>
 #include <fstream>
+#include <iostream>
+#include <arpa/inet.h>
 
 using namespace std;
 
-#define PORT 8080
-#define PACKET_SIZE 1500
+#define SEND_PORT 1400
+
 #define WINDOW_SIZE 4
-#define SENDER_PORT 3000
+#define PACKET_SIZE 1500
 
 int getSize(char *s) {
     char *t;
@@ -81,7 +75,7 @@ int main() {
 
     servaddr.sin_family = AF_INET;
     servaddr.sin_addr.s_addr = INADDR_ANY;
-    servaddr.sin_port = htons(PORT);
+    servaddr.sin_port = htons(SEND_PORT);
 
     if (bind(sock, (const struct sockaddr *) &servaddr,
              sizeof(servaddr)) < 0) {
