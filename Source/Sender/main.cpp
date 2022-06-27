@@ -8,8 +8,8 @@
 
 using namespace std;
 
-int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int j, int packet_num);
-void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int fd, struct sockaddr_in &addr);
+int setSequenceNumber(char window[][SIZE], int j, int packetNum);
+void transmitWindow(char window[][SIZE], int fd, struct sockaddr_in &addr);
 
 int main(int argc, char **argv) {
 
@@ -27,13 +27,13 @@ int main(int argc, char **argv) {
 
     char data;
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    int currentPacketSize = 0, currentWindowSize = 0, packet_num = 0;
-    char window[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE] = {0};
+    int currentPacketSize = 0, currentWindowSize = 0, packetNum = 0;
+    char window[WINDOW_SIZE][SIZE] = {0};
 
     while (file >> noskipws >> data) {
         window[currentWindowSize][currentPacketSize++] = data;
         if (currentPacketSize == PACKET_SIZE) {
-            packet_num = addSequenceNumber(window, currentWindowSize, packet_num);
+            packetNum = setSequenceNumber(window, currentWindowSize, packetNum);
             currentPacketSize = 0;
             currentWindowSize++;
         }
@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
         }
     }
 
-    packet_num = addSequenceNumber(window, currentWindowSize, packet_num);
+    packetNum = setSequenceNumber(window, currentWindowSize, packetNum);
 
     while (currentWindowSize < WINDOW_SIZE) {
         currentWindowSize++;
-        packet_num = addSequenceNumber(window, currentWindowSize, packet_num);
+        packetNum = setSequenceNumber(window, currentWindowSize, packetNum);
     }
 
     char endOfTransmit[EOF_DATA_SIZE];
@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int fd, struct sockaddr_in &addr) {
+void transmitWindow(char window[][SIZE], int fd, struct sockaddr_in &addr) {
 
     char msg[WINDOW_SIZE * 4];
     msg[0] = '\0';
@@ -90,12 +90,12 @@ void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE]
         msg[n] = '\0';
     }
 
-    for (int i = 0; i < WINDOW_SIZE; i++) memset(window[i], 0, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE);
+    for (int i = 0; i < WINDOW_SIZE; i++) memset(window[i], 0, SIZE);
 }
 
-int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int j, int packet_num) {
+int setSequenceNumber(char window[][SIZE], int j, int packetNum) {
     char src[EOF_DATA_SIZE];
-    sprintf(src, "#%d#%d", packet_num, htons(RECEIVER_PORT));
+    sprintf(src, "#%d#%d", packetNum, htons(RECEIVER_PORT));
     strncat(window[j], src, sizeof(src));
-    return (packet_num + 1) % (WINDOW_SIZE * 2);
+    return (packetNum + 1) % (WINDOW_SIZE * 2);
 }

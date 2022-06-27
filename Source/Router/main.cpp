@@ -29,7 +29,7 @@ int main() {
 
     queue<char *> buffer;
     char *to_send_message;
-    char message[PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE];
+    char message[SIZE];
 
     struct sockaddr_in serverAddr, clientAddr, receiverAddr;
 
@@ -53,7 +53,7 @@ int main() {
     socklen_t len = sizeof(clientAddr);
 
     int n;
-    while ((n = recvfrom(fd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
+    while ((n = recvfrom(fd, (char *) message, SIZE, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
 
         message[n] = '\0';
         if (buffer.size() < BUFFER_SIZE) buffer.push(message);

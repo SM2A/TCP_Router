@@ -10,4 +10,6 @@
 
 #define BUFFER_SIZE 10
 
+#define SIZE PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE
+
 #endif
