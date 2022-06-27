@@ -20,7 +20,7 @@ int getSize(char *s) {
 int getPacketNum(char *packet) {
     int num = 0, j = 1;
     for (int i = getSize(packet) - 1; i >= 0; i--) {
-        if (packet[i] == '_') {
+        if (packet[i] == '#') {
             packet[i] = '\0';
             return num;
         }
@@ -33,7 +33,7 @@ int getPacketNum(char *packet) {
 int getDestPort(char *message) {
     int num = 0, j = 1;
     for (int i = strlen(message) - 1; i >= 0; i--) {
-        if (message[i] == '_') {
+        if (message[i] == '#') {
             message[i] = '\0';
             return num;
         }
@@ -45,12 +45,12 @@ int getDestPort(char *message) {
 
 void sendAck(int &expected_packet_num, const int sock, struct sockaddr_in &addr, const int dest_port) {
     char *ack_message = new char[20];
-    sprintf(ack_message, "ACK-%d_%d", expected_packet_num, dest_port);
+    sprintf(ack_message, "ACK-%d#%d", expected_packet_num, dest_port);
     addr.sin_port = htons(SENDER_PORT);
     sendto(sock, (const char *) ack_message, strlen(ack_message),MSG_CONFIRM, (const struct sockaddr *) &addr,sizeof(addr));
 }
 
-int main() {
+int main(int argc, char **argv) {
 
     bool receivedAll, receivedPackets[WINDOW_SIZE];
     int port, packet_num, expected_packet_num = 0;
@@ -71,7 +71,7 @@ int main() {
 
     socklen_t len = sizeof(clientAddr);
 
-    ofstream file("out.txt");
+    ofstream file((string(argv[1])));
 
     memset(receivedPackets, false, WINDOW_SIZE);
 
@@ -82,7 +82,7 @@ int main() {
                      (struct sockaddr *) &clientAddr, &len);
         packet[n] = '\0';
         port = getDestPort(packet);
-        if (!strcmp(packet, "end")) {
+        if (!strcmp(packet, "eof")) {
             break;
         }
         packet_num = getPacketNum(packet);

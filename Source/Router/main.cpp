@@ -14,14 +14,14 @@ using namespace std;
 
 void addSourcePort(char *message, const int port) {
     char *ch = new char[10];
-    sprintf(ch, "_%d", port);
+    sprintf(ch, "#%d", port);
     strncat(message, ch, sizeof(ch));
 }
 
 int getDestPort(char *message) {
     int num = 0, j = 1;
     for (int i = strlen(message) - 1; i >= 0; i--) {
-        if (message[i] == '_') {
+        if (message[i] == '#') {
             message[i] = '\0';
             return num;
         }
