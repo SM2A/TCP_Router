@@ -11,13 +11,13 @@ SRC_FILES_C := $(wildcard $(SRC_DIR)/Receiver/*.cpp, wildcard $(SRC_DIR)/Receive
 all: clean router.out receiver.out sender.out
 
 router.out: $(SRC_FILES_R)
-	${CC} ${SRC_DIR}/Router/*.cpp -o router.out
+	${CC} ${SRC_DIR}/Router/*.cpp ${SRC_DIR}/Common/*.cpp -o router.out
 
 sender.out: $(SRC_FILES_S)
 	${CC} ${SRC_DIR}/Sender/*.cpp -o sender.out
 
 receiver.out: $(SRC_FILES_C)
-	${CC} ${SRC_DIR}/Receiver/*.cpp -o receiver.out
+	${CC} ${SRC_DIR}/Receiver/*.cpp ${SRC_DIR}/Common/*.cpp -o receiver.out
 
 clean:
 	rm -f *.out
