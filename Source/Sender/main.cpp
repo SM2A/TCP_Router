@@ -4,15 +4,9 @@
 #include <unistd.h>
 #include <iostream>
 #include <arpa/inet.h>
+#include "../Common/static.h"
 
 using namespace std;
-
-#define SENDER_PORT 1398
-#define RECEIVER_PORT 1401
-
-#define WINDOW_SIZE 4
-#define PACKET_SIZE 1500
-#define EOF_DATA_SIZE 12
 
 int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int j, int packet_num);
 void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int fd, struct sockaddr_in &addr);

@@ -2,14 +2,9 @@
 #include <fstream>
 #include <iostream>
 #include <arpa/inet.h>
+#include "../Common/static.h"
 
 using namespace std;
-
-#define SENDER_PORT 1398
-#define RECEIVER_PORT 1401
-
-#define WINDOW_SIZE 4
-#define PACKET_SIZE 1500
 
 int getSize(char *s) {
     char *t;
@@ -54,7 +49,7 @@ int main(int argc, char **argv) {
 
     bool receivedAll, receivedPackets[WINDOW_SIZE];
     int port, packet_num, expected_packet_num = 0;
-    char message[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + 12];
+    char message[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE];
 
     struct sockaddr_in servAddr, clientAddr;
 
@@ -77,8 +72,8 @@ int main(int argc, char **argv) {
 
     while (true) {
 
-        char packet[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
-        int n = recvfrom(fd, (char *) packet, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL,
+        char packet[PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE];
+        int n = recvfrom(fd, (char *) packet, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE, MSG_WAITALL,
                      (struct sockaddr *) &clientAddr, &len);
         packet[n] = '\0';
         port = getDestPort(packet);
@@ -87,7 +82,7 @@ int main(int argc, char **argv) {
         }
         packet_num = getPacketNum(packet);
         if (expected_packet_num <= packet_num && expected_packet_num + WINDOW_SIZE > packet_num) {
-            strncpy(message[packet_num % WINDOW_SIZE], packet, PACKET_SIZE + WINDOW_SIZE * 2 + 12);
+            strncpy(message[packet_num % WINDOW_SIZE], packet, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE);
             receivedPackets[packet_num % WINDOW_SIZE] = true;
         } else {
             sendAck(expected_packet_num, fd, clientAddr, port);

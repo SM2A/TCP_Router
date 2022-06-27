@@ -2,15 +2,9 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
+#include "../Common/static.h"
 
 using namespace std;
-
-#define SENDER_PORT 1398
-#define RECEIVER_PORT 1401
-
-#define WINDOW_SIZE 4
-#define BUFFER_SIZE 10
-#define PACKET_SIZE 1500
 
 void addSourcePort(char *message, const int port) {
     char *ch = new char[10];
@@ -35,7 +29,7 @@ int main() {
 
     queue<char *> buffer;
     char *to_send_message;
-    char message[PACKET_SIZE + WINDOW_SIZE * 2 + 12];
+    char message[PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE];
 
     struct sockaddr_in serverAddr, clientAddr, receiverAddr;
 
@@ -59,7 +53,7 @@ int main() {
     socklen_t len = sizeof(clientAddr);
 
     int n;
-    while ((n = recvfrom(fd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + 12, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
+    while ((n = recvfrom(fd, (char *) message, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
 
         message[n] = '\0';
         if (buffer.size() < BUFFER_SIZE) buffer.push(message);
