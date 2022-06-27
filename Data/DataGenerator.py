@@ -1,6 +1,6 @@
 import random
 
-size = 1024 * 1024
+size = 1024 * 1024 * 10
 name = 'Data.txt'
 
 file = open(name, 'w')

@@ -41,7 +41,7 @@ int main() {
         inMSG[n] = '\0';
         if (buffer.size() < BUFFER_SIZE) buffer.push(inMSG);
 
-        if (!buffer.empty()) {
+        if (!buffer.empty() && (rand() %10 != 9)) {
             outMSG = buffer.front();
             int port = getNumber(outMSG);
             receiverAddr.sin_port = port;
@@ -55,7 +55,7 @@ int main() {
 }
 
 void setSourcePort(char msg[], int port) {
-    char *ch = new char[10];
+    char ch[10];
     sprintf(ch, "#%d", port);
     strncat(msg, ch, sizeof(ch));
 }
