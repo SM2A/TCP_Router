@@ -12,9 +12,10 @@ using namespace std;
 
 #define WINDOW_SIZE 4
 #define PACKET_SIZE 1500
+#define EOF_DATA_SIZE 12
 
-int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int j, int packet_num);
-void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd, struct sockaddr_in &addr);
+int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int j, int packet_num);
+void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int fd, struct sockaddr_in &addr);
 
 int main(int argc, char **argv) {
 
@@ -33,18 +34,18 @@ int main(int argc, char **argv) {
     char data;
     int fd = socket(AF_INET, SOCK_DGRAM, 0);
     int currentPacketSize = 0, currentWindowSize = 0, packet_num = 0;
-    char window[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + 12] = {0};
+    char window[WINDOW_SIZE][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE] = {0};
 
     while (file >> noskipws >> data) {
         window[currentWindowSize][currentPacketSize++] = data;
-        if (currentWindowSize == WINDOW_SIZE) {
-            transmitWindow(window, fd, serverAddr);
-            currentWindowSize = 0;
-        }
         if (currentPacketSize == PACKET_SIZE) {
             packet_num = addSequenceNumber(window, currentWindowSize, packet_num);
             currentPacketSize = 0;
             currentWindowSize++;
+        }
+        if (currentWindowSize == WINDOW_SIZE) {
+            transmitWindow(window, fd, serverAddr);
+            currentWindowSize = 0;
         }
     }
 
@@ -55,12 +56,12 @@ int main(int argc, char **argv) {
         packet_num = addSequenceNumber(window, currentWindowSize, packet_num);
     }
 
-    char endOfTransmit[12];
+    char endOfTransmit[EOF_DATA_SIZE];
     transmitWindow(window, fd, serverAddr);
     sprintf(endOfTransmit, "eof#%d", htons(RECEIVER_PORT));
     serverAddr.sin_port = htons(SENDER_PORT);
 
-    sendto(fd, endOfTransmit, 12, MSG_CONFIRM, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
+    sendto(fd, endOfTransmit, strlen(endOfTransmit), MSG_CONFIRM, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
     auto end = chrono::high_resolution_clock::now();
     cout << "Transmitted in " << chrono::duration<double, milli>(end - begin).count() << " ms" << endl;
@@ -70,7 +71,7 @@ int main(int argc, char **argv) {
     return 0;
 }
 
-void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd, struct sockaddr_in &addr) {
+void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int fd, struct sockaddr_in &addr) {
 
     char msg[WINDOW_SIZE * 4];
     msg[0] = '\0';
@@ -95,11 +96,11 @@ void transmitWindow(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int fd, s
         msg[n] = '\0';
     }
 
-    for (int k = 0; k < WINDOW_SIZE; k++) memset(window[k], 0, PACKET_SIZE + WINDOW_SIZE * 2 + 12);
+    for (int i = 0; i < WINDOW_SIZE; i++) memset(window[i], 0, PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE);
 }
 
-int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + 12], int j, int packet_num) {
-    char src[12];
+int addSequenceNumber(char window[][PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE], int j, int packet_num) {
+    char src[EOF_DATA_SIZE];
     sprintf(src, "#%d#%d", packet_num, htons(RECEIVER_PORT));
     strncat(window[j], src, sizeof(src));
     return (packet_num + 1) % (WINDOW_SIZE * 2);
