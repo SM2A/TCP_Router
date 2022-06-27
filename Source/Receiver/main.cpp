@@ -2,11 +2,10 @@
 #include <fstream>
 #include <iostream>
 #include <arpa/inet.h>
-#include "../Common/static.h"
+#include "../Common/common.h"
 
 using namespace std;
 
-int getNumber(char packet[]);
 void sendAck(int packetNum, int fd, struct sockaddr_in &addr, int port);
 
 int main(int argc, char **argv) {
@@ -63,19 +62,6 @@ int main(int argc, char **argv) {
     file.close();
 
     return 0;
-}
-
-int getNumber(char packet[]) {
-    int num = 0, mult = 1;
-    for (int i = strlen(packet) - 1; i >= 0; i--) {
-        if (packet[i] == '#') {
-            packet[i] = '\0';
-            return num;
-        }
-        num += (int) (packet[i] - '0') * mult;
-        mult *= 10;
-    }
-    return -1;
 }
 
 void sendAck(int packetNum, int fd, struct sockaddr_in &addr, int port) {

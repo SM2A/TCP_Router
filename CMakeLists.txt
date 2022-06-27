@@ -3,9 +3,9 @@ project(CN_CA4)
 
 set(CMAKE_CXX_STANDARD 11)
 
-add_executable(Router Source/Router/main.cpp Source/Common/static.h)
-add_executable(Receiver Source/Receiver/main.cpp Source/Common/static.h)
-add_executable(Sender Source/Sender/main.cpp Source/Common/static.h)
+add_executable(Router Source/Router/main.cpp Source/Common/common.h Source/Common/common.cpp)
+add_executable(Receiver Source/Receiver/main.cpp Source/Common/common.h Source/Common/common.cpp)
+add_executable(Sender Source/Sender/main.cpp Source/Common/common.h Source/Common/common.cpp)
 
 #set(THREADS_PREFER_PTHREAD_FLAG ON)
 #find_package(Threads REQUIRED)

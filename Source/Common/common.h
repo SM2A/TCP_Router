@@ -1,5 +1,5 @@
-#ifndef STATIC_H
-#define STATIC_H
+#ifndef COMMON_H
+#define COMMON_H
 
 #define SENDER_PORT 1398
 #define RECEIVER_PORT 1401
@@ -11,5 +11,7 @@
 #define BUFFER_SIZE 10
 
 #define SIZE PACKET_SIZE + WINDOW_SIZE * 2 + EOF_DATA_SIZE
+
+int getNumber(char packet[]);
 
 #endif

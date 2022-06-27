@@ -4,7 +4,7 @@
 #include <unistd.h>
 #include <iostream>
 #include <arpa/inet.h>
-#include "../Common/static.h"
+#include "../Common/common.h"
 
 using namespace std;
 

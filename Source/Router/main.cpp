@@ -2,39 +2,15 @@
 #include <cstring>
 #include <iostream>
 #include <netinet/in.h>
-#include "../Common/static.h"
+#include "../Common/common.h"
 
 using namespace std;
 
-void addSourcePort(char *message, const int port) {
-    char *ch = new char[10];
-    sprintf(ch, "#%d", port);
-    strncat(message, ch, sizeof(ch));
-}
-
-int getDestPort(char *message) {
-    int num = 0, j = 1;
-    for (int i = strlen(message) - 1; i >= 0; i--) {
-        if (message[i] == '#') {
-            message[i] = '\0';
-            return num;
-        }
-        num += (int) (message[i] - '0') * j;
-        j *= 10;
-    }
-    return -1;
-}
+void setSourcePort(char msg[], int port);
 
 int main() {
 
-    queue<char *> buffer;
-    char *to_send_message;
-    char message[SIZE];
-
     struct sockaddr_in serverAddr, clientAddr, receiverAddr;
-
-    int fd = socket(AF_INET, SOCK_DGRAM, 0);
-    int receiverSock = socket(AF_INET, SOCK_DGRAM, 0);
 
     memset(&serverAddr, 0, sizeof(serverAddr));
     memset(&clientAddr, 0, sizeof(clientAddr));
@@ -48,26 +24,38 @@ int main() {
     receiverAddr.sin_addr.s_addr = INADDR_ANY;
     receiverAddr.sin_port = htons(RECEIVER_PORT);
 
-    bind(fd, (const struct sockaddr *) &serverAddr, sizeof(serverAddr));
+    int fd = socket(AF_INET, SOCK_DGRAM, 0);
+    bind(fd, (struct sockaddr *) &serverAddr, sizeof(serverAddr));
 
     socklen_t len = sizeof(clientAddr);
 
-    int n;
-    while ((n = recvfrom(fd, (char *) message, SIZE, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
+    char *outMSG;
+    char inMSG[SIZE];
+    queue<char *> buffer;
 
-        message[n] = '\0';
-        if (buffer.size() < BUFFER_SIZE) buffer.push(message);
+    int receiverFD = socket(AF_INET, SOCK_DGRAM, 0);
+
+    int n;
+    while ((n = recvfrom(fd, inMSG, SIZE, MSG_WAITALL, (struct sockaddr *) &clientAddr, &len)) != -1) {
+
+        inMSG[n] = '\0';
+        if (buffer.size() < BUFFER_SIZE) buffer.push(inMSG);
 
         if (!buffer.empty()) {
-            to_send_message = buffer.front();
-            buffer.pop();
-            int port = getDestPort(to_send_message);
+            outMSG = buffer.front();
+            int port = getNumber(outMSG);
             receiverAddr.sin_port = port;
-            addSourcePort(to_send_message, clientAddr.sin_port);
-            sendto(receiverSock, (const char *) to_send_message, strlen(to_send_message),MSG_CONFIRM,
-                   (const struct sockaddr *) &receiverAddr, sizeof(receiverAddr));
+            setSourcePort(outMSG, clientAddr.sin_port);
+            sendto(receiverFD, outMSG, strlen(outMSG), MSG_CONFIRM, (struct sockaddr *) &receiverAddr, sizeof(receiverAddr));
+            buffer.pop();
         }
     }
 
     return 0;
+}
+
+void setSourcePort(char msg[], int port) {
+    char *ch = new char[10];
+    sprintf(ch, "#%d", port);
+    strncat(msg, ch, sizeof(ch));
 }
